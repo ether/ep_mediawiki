@@ -1,0 +1,18 @@
+{
+  "parts":[
+    {
+      "name": "mediawiki",
+      "hooks":{
+        "getLineHTMLForExport": "ep_mediawiki/export",
+        "expressCreateServer": "ep_mediawiki/express",
+        "eejsBlock_exportColumn": "ep_mediawiki/index",
+        "eejsBlock_scripts": "ep_mediawiki/index",
+        "eejsBlock_mySettings": "ep_mediawiki/index"
+      },
+      "client_hooks": {
+        "aceEditorCSS": "ep_mediawiki/static/js/mediawiki",
+        "postAceInit": "ep_mediawiki/static/js/mediawiki"
+      }
+    }
+  ]
+}
