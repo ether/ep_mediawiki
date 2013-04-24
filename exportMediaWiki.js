@@ -1,20 +1,3 @@
-/**
- * Copyright 2009 Google Inc.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
 var async = require("ep_etherpad-lite/node_modules/async");
 var Changeset = require("ep_etherpad-lite/static/js/Changeset");
 var padManager = require("ep_etherpad-lite/node/db/PadManager");
@@ -68,8 +51,8 @@ function getMediaWikiFromAtext(pad, atext)
   var textLines = atext.text.slice(0, -1).split('\n');
   var attribLines = Changeset.splitAttributionLines(atext.attribs, atext.text);
 
-  var tags = ['**', '*', 'underline', 'sout'];
-  var props = ['bold', 'italic', 'underline', 'strikethrough'];
+  var tags = ['==', '===', '\'\'\'', '\'\'', 'u>', 's>'];
+  var props = ['heading1', 'heading2', 'bold', 'italic', 'underline', 'strikethrough'];
   var anumMap = {};
 
   props.forEach(function (propName, i)
@@ -78,28 +61,6 @@ function getMediaWikiFromAtext(pad, atext)
     if (propTrueNum >= 0)
     {
       anumMap[propTrueNum] = i;
-    }
-  });
-
-  var headingtags = ['#', '##', '###', '    ', '      ', '        '];
-  var headingprops = [['heading', 'h1'], ['heading', 'h2'], ['heading', 'h3'], ['heading', 'h4'], ['heading', 'h5'], ['heading', 'h6']];
-  var headinganumMap = {};
-
-  headingprops.forEach(function (prop, i)
-  {
-    var name;
-    var value;
-    if (typeof prop === 'object') {
-      name = prop[0];
-      value = prop[1];
-    } else {
-      name = prop;
-      value = true;
-    }
-    var propTrueNum = apool.putAttrib([name, value], true);
-    if (propTrueNum >= 0)
-    {
-      headinganumMap[propTrueNum] = i;
     }
   });
 
@@ -118,55 +79,20 @@ function getMediaWikiFromAtext(pad, atext)
     var taker = Changeset.stringIterator(text);
     var assem = Changeset.stringAssembler();
 
-    var openTags = [];
     function emitOpenTag(i)
     {
-      openTags.unshift(i);
+      if (tags[i].indexOf('>') !== -1) {
+        assem.append('<');
+      }
       assem.append(tags[i]);
     }
 
     function emitCloseTag(i)
     {
-      openTags.shift();
-      assem.append(tags[i]);
-    }
-    
-    function orderdCloseTags(tags2close)
-    {
-      for(var i=0;i<openTags.length;i++)
-      {
-        for(var j=0;j<tags2close.length;j++)
-        {
-          if(tags2close[j] == openTags[i])
-          {
-            emitCloseTag(tags2close[j]);
-            i--;
-            break;
-          }
-        }
+      if (tags[i].indexOf('>') !== -1) {
+        assem.append('</');
       }
-    }
-
-    // start heading check
-    var heading = false;
-    var deletedAsterisk = false; // we need to delete * from the beginning of the heading line
-    var iter2 = Changeset.opIterator(Changeset.subattribution(attribs, 0, 1));
-    if (iter2.hasNext()) {
-      var o2 = iter2.next();
-      
-      // iterate through attributes
-      Changeset.eachAttribNumber(o2.attribs, function (a) {
-        
-        if (a in headinganumMap)
-        {
-          var i = headinganumMap[a]; // i = 0 => bold, etc.
-          heading = headingtags[i];
-        }
-      });
-    }
-
-    if (heading) {
-      assem.append(heading);
+      assem.append(tags[i]);
     }
 
     var urls = _findURLs(text);
@@ -215,7 +141,6 @@ function getMediaWikiFromAtext(pad, atext)
             propVals[i] = true; // set it back
           }
         }
-
         // now each member of propVal is in {false,LEAVE,ENTER,true}
         // according to what happens at start of span
         if (propChanged)
@@ -241,25 +166,18 @@ function getMediaWikiFromAtext(pad, atext)
             }
           }
 
-          var tags2close = [];
-
           for (var i = propVals.length - 1; i >= 0; i--)
           {
             if (propVals[i] === LEAVE)
             {
-              //emitCloseTag(i);
-              tags2close.push(i);
+              emitCloseTag(i);
               propVals[i] = false;
             }
             else if (propVals[i] === STAY)
             {
-              //emitCloseTag(i);
-              tags2close.push(i);
+              emitCloseTag(i);
             }
           }
-          
-          orderdCloseTags(tags2close);
-          
           for (var i = 0; i < propVals.length; i++)
           {
             if (propVals[i] === ENTER || propVals[i] === STAY)
@@ -275,35 +193,19 @@ function getMediaWikiFromAtext(pad, atext)
         {
           chars--; // exclude newline at end of line, if present
         }
-        
         var s = taker.take(chars);
-        
-        //removes the characters with the code 12. Don't know where they come 
-        //from but they break the abiword parser and are completly useless
-        s = s.replace(String.fromCharCode(12), "");
 
-        // delete * if this line is a heading
-        if (heading && !deletedAsterisk) {
-          s = s.substring(1);
-          deletedAsterisk = true;
-        }
-        
         assem.append(s);
       } // end iteration over spans in line
-      
-      var tags2close = [];
       for (var i = propVals.length - 1; i >= 0; i--)
       {
         if (propVals[i])
         {
-          tags2close.push(i);
+          emitCloseTag(i);
           propVals[i] = false;
         }
       }
-      
-      orderdCloseTags(tags2close);
     } // end processNextChars
-
     if (urls)
     {
       urls.forEach(function (urlData)
@@ -312,85 +214,41 @@ function getMediaWikiFromAtext(pad, atext)
         var url = urlData[1];
         var urlLength = url.length;
         processNextChars(startIndex - idx);
-        assem.append('\\url{');
-        processNextChars(urlLength);
-        assem.append('}');
+        assem.append('[');
+
+        // Do not use processNextChars since a link does not contain syntax and
+        // needs no escaping
+        var iter = Changeset.opIterator(Changeset.subattribution(attribs, idx, idx + urlLength));
+        idx += urlLength;
+        assem.append(taker.take(iter.next().chars));
+
+        assem.append(']');
       });
     }
-
     processNextChars(text.length - idx);
 
-//    if (heading) {
-//      assem.append('}');
-//    }
-
-    // replace &, _
-    assem = assem.toString();
-    assem = assem.replace(/\&/g, '\\&');
-    assem = assem.replace(/\_/g, '\\_'); // this breaks MediaWiki math mode: $\sum_i^j$ becomes $\sum\_i^j$
-
-    return assem;
+    return assem.toString() + "\n";
   } // end getLineMediaWiki
   var pieces = [];
 
-  // Need to deal with constraints imposed on HTML lists; can
-  // only gain one level of nesting at once, can't change type
-  // mid-list, etc.
-  // People might use weird indenting, e.g. skip a level,
-  // so we want to do something reasonable there.  We also
-  // want to deal gracefully with blank lines.
-  // => keeps track of the parents level of indentation
-  var lists = []; // e.g. [[1,'bullet'], [3,'bullet'], ...]
   for (var i = 0; i < textLines.length; i++)
   {
     var line = _analyzeLine(textLines[i], attribLines[i], apool);
     var lineContent = getLineMediaWiki(line.text, line.aline);
-            
-    if (line.listLevel)//If we are inside a list
+
+    if (line.listLevel && lineContent)
     {
-      // do list stuff
-      var whichList = -1; // index into lists or -1
-      if (line.listLevel)
+      if (line.listTypeName == "number")
       {
-        whichList = lists.length;
-        for (var j = lists.length - 1; j >= 0; j--)
-        {
-          if (line.listLevel <= lists[j][0])
-          {
-            whichList = j;
-          }
-        }
-      }
-
-      if (whichList >= lists.length)//means we are on a deeper level of indentation than the previous line
-      {
-        lists.push([line.listLevel, line.listTypeName]);
-        if(line.listTypeName == "number")
-        {
-          pieces.push("\n"+(new Array((line.listLevel-1)*4)).join(' ')+(new Array(line.listLevel*4)).join(' ')+"1. ", lineContent || "\n");
-
-        }
-        else
-        {
-          pieces.push("\n"+(new Array((line.listLevel-1)*4)).join(' ')+(new Array(line.listLevel*4)).join(' ')+"* ", lineContent || "\n");
-        }
-      }
-      else//means we are getting closer to the lowest level of indentation
-      {
-        if(line.listTypeName == "number"){
-          pieces.push("\n"+(new Array(line.listLevel*4)).join(' ')+"1. ", lineContent || "\n"); // problem here 
-        }else{
-          pieces.push("\n"+(new Array(line.listLevel*4)).join(' ')+"* ", lineContent || "\n"); // problem here
-        }
+        pieces.push(new Array(line.listLevel + 1).join('') + '# ');
+      } else {
+        pieces.push(new Array(line.listLevel + 1).join('') + '* ');
       }
     }
-    else//outside any list
-    {
-      pieces.push(lineContent, "\n");
-    }
-
+    pieces.push(lineContent);
   }
-  return pieces.join("");
+
+  return pieces.join('');
 }
 
 function _analyzeLine(text, aline, apool)
