@@ -2,17 +2,9 @@
   word-wrap: break-word;
 }
 .mediawiki,
-.mediawiki h1,
-.mediawiki h2,
-.mediawiki h3,
-.mediawiki h4,
-.mediawiki h5,
-.mediawiki h6,
 .mediawiki pre,
 .mediawiki code,
 .mediawiki blockquote,
-.mediawiki em,
-.mediawiki strong,
 .mediawiki code {
   font-size: 14px;
   line-height: 20px;
