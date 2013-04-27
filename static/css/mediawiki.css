@@ -160,7 +160,7 @@
   color: #333333;
 }
 .mediawiki a:after {
-  content: "](" attr(href) ")";
+  content: " " attr(href) "]";
   display: inline;
   color: #333333;
 }
