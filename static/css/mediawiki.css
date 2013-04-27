@@ -257,3 +257,15 @@
   content: "</u>"
 }
 
+.list-bullet1 > li:before{
+  content: "*";
+}
+
+.list-bullet2 > li:before{
+  content: "*";
+}
+
+.list-bullet3 > li:before{
+  content: "*";
+}
+
