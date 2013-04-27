@@ -224,10 +224,10 @@
 }
 
 .mediawiki code:before{
-  content: "<strike>"
+  content: "<code>"
 }
 .mediawiki code:after{
-  content: "</strike>"
+  content: "</code>"
 }
 
 .list-indent1 > li:before{
