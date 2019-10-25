@@ -292,7 +292,7 @@ function _analyzeLine(text, aline, apool)
 
 exports.getPadMediaWikiDocument = function (padId, revNum, callback)
 {
-  padManager.getPad(padId, function (err, pad)
+  padManager.getPad(padId, null, function (err, pad)
   {
     if(ERR(err, callback)) return;
 
