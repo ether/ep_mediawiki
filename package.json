@@ -1,7 +1,7 @@
 {
   "name": "ep_mediawiki",
   "description": "Edit and Export as mediawiki in Etherpad",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "author": {
     "name": "John McLear",
     "email": "john@mclear.co.uk",
@@ -13,6 +13,6 @@
   },
   "contributors": [],
   "peerDependencies": {
-   "ep_headings" :"*"
+    "ep_headings": "*"
   }
 }
