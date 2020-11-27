@@ -1,14 +1,13 @@
-var exportMediaWiki = require('./exportMediaWiki');
+const exportMediaWiki = require('./exportMediaWiki');
 
 exports.expressCreateServer = function (hook_name, args, cb) {
-  args.app.get('/p/:pad/:rev?/export/mediawiki', function(req, res, next) {
-    var padID = req.params.pad;
-    var revision = req.params.rev ? req.params.rev : null;
+  args.app.get('/p/:pad/:rev?/export/mediawiki', (req, res, next) => {
+    const padID = req.params.pad;
+    const revision = req.params.rev ? req.params.rev : null;
 
-    exportMediaWiki.getPadMediaWikiDocument(padID, revision, function(err, result) {
+    exportMediaWiki.getPadMediaWikiDocument(padID, revision, (err, result) => {
       res.contentType('plain/text');
       res.send(result);
     });
   });
 };
-
