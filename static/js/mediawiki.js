@@ -1,14 +1,15 @@
-if (typeof exports === 'undefined') {
-  var exports = this.mymodule = {};
-}
+'use strict';
 
-exports.postAceInit = function (hook, context) {
+exports.postAceInit = (hook, context) => {
   const mediawiki = {
-    enable() {
-      $('iframe[name="ace_outer"]').contents().find('iframe').contents().find('#innerdocbody').addClass('mediawiki'); // add css class mediawiki
+    enable: () => {
+      // add css class mediawiki
+      $('iframe[name="ace_outer"]').contents().find('iframe')
+          .contents().find('#innerdocbody').addClass('mediawiki');
     },
-    disable() {
-      $('iframe[name="ace_outer"]').contents().find('iframe').contents().find('#innerdocbody').removeClass('mediawiki'); // add css class mediawiki
+    disable: () => {
+      $('iframe[name="ace_outer"]').contents().find('iframe')
+          .contents().find('#innerdocbody').removeClass('mediawiki');
     },
   };
 
@@ -27,26 +28,28 @@ exports.postAceInit = function (hook, context) {
     }
   });
   /* Param initiator */
-  const urlContainsMediawikiTrue = (getParam('mediawiki') == 'true'); // if the url param is set
+  // if the url param is set
+  const urlContainsMediawikiTrue = (getParam('mediawiki') === 'true');
   if (urlContainsMediawikiTrue) {
     $('#options-mediawiki').attr('checked', 'checked');
     mediawiki.enable();
-  } else if (getParam('mediawiki') == 'false') {
+  } else if (getParam('mediawiki') === 'false') {
     $('#options-mediawiki').attr('checked', false);
     mediawiki.disable();
   }
 };
 
-exports.aceEditorCSS = function (hook_name, cb) { return ['/ep_mediawiki/static/css/mediawiki.css']; }; // inner pad CSS
+// inner pad CSS
+exports.aceEditorCSS = (hook_name, cb) => ['/ep_mediawiki/static/css/mediawiki.css'];
 
-function getParam(sname) {
+const getParam = (sname) => {
   let params = location.search.substr(location.search.indexOf('?') + 1);
   let sval = '';
   params = params.split('&');
   // split param and value into individual pieces
   for (let i = 0; i < params.length; i++) {
-    temp = params[i].split('=');
-    if ([temp[0]] == sname) { sval = temp[1]; }
+    const temp = params[i].split('=');
+    if ([temp[0]] === sname) { sval = temp[1]; }
   }
   return sval;
-}
+};
