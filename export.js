@@ -28,7 +28,7 @@ function getInlineStyle(header) {
   return '';
 }
 // line, apool,attribLine,text
-exports.getLineHTMLForExport = function (hook, context) {
+exports.getLineHTMLForExport = async (hook, context) => {
   const header = _analyzeLine(context.attribLine, context.apool);
   if (header) {
     const inlineStyle = getInlineStyle(header);
@@ -37,7 +37,7 @@ exports.getLineHTMLForExport = function (hook, context) {
     }
     context.lineContent = `<${header} style="${inlineStyle}">${context.lineContent}</${header}>`;
   }
-  return true;
+  return context.lineContent;
 };
 
 function _analyzeLine(alineAttrs, apool) {

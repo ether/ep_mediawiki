@@ -4,7 +4,7 @@ let padManager = require('ep_etherpad-lite/node/db/PadManager');
 let ERR = require('ep_etherpad-lite/node_modules/async-stacktrace');
 let Security = require('ep_etherpad-lite/static/js/security');
 
-function getPadMediaWiki(pad, revNum, callback) {
+const getPadMediaWiki = async (pad, revNum, callback) => {
   let atext = pad.atext;
   let MediaWiki;
   async.waterfall([
@@ -12,8 +12,7 @@ function getPadMediaWiki(pad, revNum, callback) {
     // fetch revision atext
     function (callback) {
       if (revNum != undefined) {
-        pad.getInternalRevisionAText(revNum, (err, revisionAtext)
-      => {
+        pad.getInternalRevisionAText(revNum, (err, revisionAtext) => {
           if (ERR(err, callback)) return;
           atext = revisionAtext;
           callback();
@@ -31,8 +30,7 @@ function getPadMediaWiki(pad, revNum, callback) {
 ],
 
   // run final callback
-  (err)
-  => {
+  (err) => {
     if (ERR(err, callback)) return;
     callback(null, MediaWiki);
   });
@@ -49,8 +47,7 @@ function getMediaWikiFromAtext(pad, atext) {
   let props = ['heading1', 'heading2', 'bold', 'italic', 'underline', 'strikethrough'];
   let anumMap = {};
 
-  props.forEach((propName, i)
-  => {
+  props.forEach((propName, i) => {
     let propTrueNum = apool.putAttrib([propName, true], true);
     if (propTrueNum >= 0) {
       anumMap[propTrueNum] = i;
@@ -100,8 +97,7 @@ function getMediaWikiFromAtext(pad, atext) {
       while (iter.hasNext()) {
         let o = iter.next();
         var propChanged = false;
-        Changeset.eachAttribNumber(o.attribs, (a)
-        => {
+        Changeset.eachAttribNumber(o.attribs, (a) => {
           if (a in anumMap) {
             let i = anumMap[a]; // i = 0 => bold, etc.
             if (!propVals[i]) {
@@ -170,8 +166,7 @@ function getMediaWikiFromAtext(pad, atext) {
       }
     } // end processNextChars
     if (urls) {
-      urls.forEach((urlData)
-      => {
+      urls.forEach((urlData) => {
         let startIndex = urlData[0];
         let url = urlData[1];
         let urlLength = url.length;
@@ -241,16 +236,11 @@ function _analyzeLine(text, aline, apool) {
   return line;
 }
 
-exports.getPadMediaWikiDocument = function (padId, revNum, callback) {
-  padManager.getPad(padId, null, (err, pad)
-  => {
+exports.getPadMediaWikiDocument = async (padId, revNum, callback) => {
+  let pad = await padManager.getPad(padId, null);
+  getPadMediaWiki(pad, revNum, (err, MediaWiki) => {
     if (ERR(err, callback)) return;
-
-    getPadMediaWiki(pad, revNum, (err, MediaWiki)
-    => {
-      if (ERR(err, callback)) return;
-      callback(null, MediaWiki);
-    });
+    callback(null, MediaWiki);
   });
 };
 
