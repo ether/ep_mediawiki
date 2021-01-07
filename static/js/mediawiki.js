@@ -40,7 +40,7 @@ exports.postAceInit = (hook, context) => {
 };
 
 // inner pad CSS
-exports.aceEditorCSS = (hook_name, cb) => ['/ep_mediawiki/static/css/mediawiki.css'];
+exports.aceEditorCSS = (hookName, cb) => ['/ep_mediawiki/static/css/mediawiki.css'];
 
 const getParam = (sname) => {
   let params = location.search.substr(location.search.indexOf('?') + 1);

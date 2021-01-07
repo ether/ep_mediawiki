@@ -1,7 +1,9 @@
+'use strict';
+
 const eejs = require('ep_etherpad-lite/node/eejs/');
 const Changeset = require('ep_etherpad-lite/static/js/Changeset');
 
-function getInlineStyle(header) {
+const getInlineStyle = (header) => {
   switch (header) {
     case 'h1':
       return 'font-size: 2.0em;line-height: 120%;';
@@ -40,7 +42,7 @@ exports.getLineHTMLForExport = async (hook, context) => {
   return context.lineContent;
 };
 
-function _analyzeLine(alineAttrs, apool) {
+const _analyzeLine = (alineAttrs, apool) => {
   let header = null;
   if (alineAttrs) {
     const opIter = Changeset.opIterator(alineAttrs);

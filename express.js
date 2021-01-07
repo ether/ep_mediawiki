@@ -1,6 +1,8 @@
+'use strict';
+
 const exportMediaWiki = require('./exportMediaWiki');
 
-exports.expressCreateServer = function (hook_name, args, cb) {
+exports.expressCreateServer = (hookName, args, cb) => {
   args.app.get('/p/:pad/:rev?/export/mediawiki', async (req, res, next) => {
     const padID = req.params.pad;
     const revision = req.params.rev ? req.params.rev : null;

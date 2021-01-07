@@ -1,8 +1,10 @@
-let async = require('ep_etherpad-lite/node_modules/async');
-let Changeset = require('ep_etherpad-lite/static/js/Changeset');
-let padManager = require('ep_etherpad-lite/node/db/PadManager');
-let ERR = require('ep_etherpad-lite/node_modules/async-stacktrace');
-let Security = require('ep_etherpad-lite/static/js/security');
+'use strict';
+
+const async = require('ep_etherpad-lite/node_modules/async');
+const Changeset = require('ep_etherpad-lite/static/js/Changeset');
+const padManager = require('ep_etherpad-lite/node/db/PadManager');
+const ERR = require('ep_etherpad-lite/node_modules/async-stacktrace');
+const Security = require('ep_etherpad-lite/static/js/security');
 
 const getPadMediaWiki = async (pad, revNum, callback) => {
   let atext = pad.atext;
@@ -38,7 +40,7 @@ const getPadMediaWiki = async (pad, revNum, callback) => {
 
 exports.getPadMediaWiki = getPadMediaWiki;
 
-function getMediaWikiFromAtext(pad, atext) {
+const getMediaWikiFromAtext = (pad, atext) => {
   let apool = pad.apool();
   let textLines = atext.text.slice(0, -1).split('\n');
   let attribLines = Changeset.splitAttributionLines(atext.attribs, atext.text);
@@ -205,7 +207,7 @@ function getMediaWikiFromAtext(pad, atext) {
   return pieces.join('');
 }
 
-function _analyzeLine(text, aline, apool) {
+const _analyzeLine = (text, aline, apool) => {
   let line = {};
 
   // identify list
@@ -251,7 +253,7 @@ let _REGEX_URLCHAR = new RegExp(`(${  /[-:@a-zA-Z0-9_.,~%+\/\\?=&#;()$]/.source 
 let _REGEX_URL = new RegExp(`${/(?:(?:https?|s?ftp|ftps|file|smb|afp|nfs|(x-)?man|gopher|txmt):\/\/|mailto:)/.source + _REGEX_URLCHAR.source  }*(?![:.,;])${  _REGEX_URLCHAR.source}`, 'g');
 
 // returns null if no URLs, or [[startIndex1, url1], [startIndex2, url2], ...]
-function _findURLs(text) {
+const _findURLs = (text) => {
   _REGEX_URL.lastIndex = 0;
   let urls = null;
   let execResult;
