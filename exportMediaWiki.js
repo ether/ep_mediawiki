@@ -1,40 +1,16 @@
 'use strict';
 
-const async = require('ep_etherpad-lite/node_modules/async');
 const Changeset = require('ep_etherpad-lite/static/js/Changeset');
 const padManager = require('ep_etherpad-lite/node/db/PadManager');
-const ERR = require('ep_etherpad-lite/node_modules/async-stacktrace');
 
 const getPadMediaWiki = async (pad, revNum, callback) => {
   let atext = pad.atext;
-  let MediaWiki;
-  async.waterfall([
-
-    // fetch revision atext
-    (callback) => {
-      if (revNum !== undefined) {
-        pad.getInternalRevisionAText(revNum, (err, revisionAtext) => {
-          if (ERR(err, callback)) return;
-          atext = revisionAtext;
-          callback();
-        });
-      } else {
-        callback(null);
-      }
-    },
-
-    // convert atext to MediaWiki
-    (callback) => {
-      MediaWiki = getMediaWikiFromAtext(pad, atext);
-      callback(null);
-    },
-  ],
-
-  // run final callback
-  (err) => {
-    if (ERR(err, callback)) return;
-    callback(null, MediaWiki);
-  });
+  if (revNum) {
+    atext = await pad.getInternalRevisionAText(revNum);
+    callback();
+  }
+  const MediaWiki = getMediaWikiFromAtext(pad, atext);
+  callback(null, MediaWiki);
 };
 
 exports.getPadMediaWiki = getPadMediaWiki;
@@ -238,11 +214,14 @@ const _analyzeLine = (text, aline, apool) => {
 };
 
 exports.getPadMediaWikiDocument = async (padId, revNum, callback) => {
-  const pad = await padManager.getPad(padId, null);
-  getPadMediaWiki(pad, revNum, (err, MediaWiki) => {
-    if (ERR(err, callback)) return;
-    callback(null, MediaWiki);
-  });
+  try {
+    const pad = await padManager.getPad(padId, null);
+    getPadMediaWiki(pad, revNum, (err, MediaWiki) => {
+      callback(null, MediaWiki);
+    });
+  } catch (e) {
+    callback(e, null);
+  }
 };
 
 // copied from ACE

@@ -5,17 +5,17 @@ const settings = require('ep_etherpad-lite/node/utils/Settings');
 
 exports.eejsBlock_exportColumn = (hookName, args, cb) => {
   args.content += eejs.require('ep_mediawiki/templates/exportcolumn.html', {}, module);
-  return cb();
+  cb();
 };
 
 exports.eejsBlock_scripts = (hookName, args, cb) => {
   args.content += eejs.require('ep_mediawiki/templates/scripts.html', {}, module);
-  return cb();
+  cb();
 };
 
 exports.eejsBlock_styles = (hookName, args, cb) => {
   args.content += eejs.require('ep_mediawiki/templates/styles.html', {}, module);
-  return cb();
+  cb();
 };
 
 exports.eejsBlock_mySettings = (hookName, args, cb) => {
@@ -28,5 +28,5 @@ exports.eejsBlock_mySettings = (hookName, args, cb) => {
   args.content += eejs.require('ep_mediawiki/templates/mediawiki_entry.ejs', {
     checked: checkedState,
   });
-  return cb();
+  cb();
 };
