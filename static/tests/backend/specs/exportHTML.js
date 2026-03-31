@@ -1,51 +1,41 @@
 'use strict';
 
-const utils = require('../utils.js');
-
-const apiKey = utils.apiKey;
-const api = utils.api;
-const apiVersion = utils.apiVersion;
+const common = require('ep_etherpad-lite/tests/backend/common');
 const randomString = require('ep_etherpad-lite/static/js/pad_utils').randomString;
 
-// Creates a pad and returns the pad id. Calls the callback when finished.
-const createPad = function (padID, callback) {
-  api.get(`/api/${apiVersion}/createPad?apikey=${apiKey}&padID=${padID}`)
-      .end((err, res) => {
-        if (err || (res.body.code !== 0)) callback(new Error('Unable to create new Pad'));
+const apiVersion = 1;
+let agent;
 
-        callback(padID);
-      });
+const createPad = async (padID) => {
+  const res = await agent.get(`/api/${apiVersion}/createPad?padID=${padID}`)
+      .set('Authorization', await common.generateJWTToken());
+  if (res.body.code !== 0) throw new Error('Unable to create new Pad');
+  return padID;
 };
 
-const setHTML = function (padID, html, callback) {
-  api.get(`/api/${apiVersion}/setHTML?apikey=${apiKey}&padID=${padID}&html=${html}`)
-      .end((err, res) => {
-        if (err || (res.body.code !== 0)) callback(new Error('Unable to set pad HTML'));
-
-        callback(null, padID);
-      });
+const setHTML = async (padID, html) => {
+  const res = await agent.get(`/api/${apiVersion}/setHTML?padID=${padID}&html=${encodeURIComponent(html)}`)
+      .set('Authorization', await common.generateJWTToken());
+  if (res.body.code !== 0) throw new Error('Unable to set pad HTML');
+  return padID;
 };
 
-const getHTMLEndPointFor = function (padID, callback) {
-  return `/api/${apiVersion}/getHTML?apikey=${apiKey}&padID=${padID}`;
-};
+const getHTMLEndPointFor = (padID) => `/api/${apiVersion}/getHTML?padID=${padID}`;
 
-const buildHTML = function (body) {
-  return `<html><body>${body}</body></html>`;
-};
-
+const buildHTML = (body) => `<html><body>${body}</body></html>`;
 
 describe('export alignment to HTML', function () {
   let padID;
   let html;
 
-  // create a new pad before each test run
-  beforeEach(function (done) {
-    padID = randomString(5);
+  before(async function () {
+    agent = await common.init();
+  });
 
-    createPad(padID, () => {
-      setHTML(padID, html(), done);
-    });
+  beforeEach(async function () {
+    padID = randomString(5);
+    await createPad(padID);
+    await setHTML(padID, html());
   });
 
   context('when pad has link', function () {
@@ -53,21 +43,21 @@ describe('export alignment to HTML', function () {
       html = () => buildHTML('<a href="http://hello.com">foo</a>');
     });
 
-    it('returns ok', function (done) {
-      api.get(getHTMLEndPointFor(padID))
+    it('returns ok', async function () {
+      await agent.get(getHTMLEndPointFor(padID))
+          .set('Authorization', await common.generateJWTToken())
           .expect('Content-Type', /json/)
-          .expect(200, done);
+          .expect(200);
     });
 
-    it('returns HTML with URL', function (done) {
-      api.get(getHTMLEndPointFor(padID))
+    it('returns HTML with URL', async function () {
+      await agent.get(getHTMLEndPointFor(padID))
+          .set('Authorization', await common.generateJWTToken())
           .expect((res) => {
             const html = res.body.data.html;
-            const expectedHTML =
-              '[http://hello.com]';
+            const expectedHTML = '[http://hello.com]';
             if (html.indexOf(expectedHTML) === -1) throw new Error('No markdown detected');
-          })
-          .end(done);
+          });
     });
   });
 });

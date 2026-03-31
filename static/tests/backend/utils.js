@@ -1,38 +1,24 @@
 'use strict';
-const appUrl = 'http://localhost:9001';
-const apiVersion = 1;
-
-const supertest = require('ep_etherpad-lite/node_modules/supertest');
-const api = supertest(appUrl);
+const common = require('ep_etherpad-lite/tests/backend/common');
 const randomString = require('ep_etherpad-lite/static/js/pad_utils').randomString;
 
-const apiKey = require('ep_etherpad-lite/node/handler/APIHandler.js').exportedForTestingOnly.apiKey;
+const apiVersion = 1;
 
-// Creates a pad and returns the pad id. Calls the callback when finished.
-const createPad = function (done) {
+const createPad = async function (agent) {
   const pad = randomString(5);
-
-  api.get(`/api/${apiVersion}/createPad?apikey=${apiKey}&padID=${pad}`)
-      .end((err, res) => {
-        if (err || (res.body.code !== 0)) done(new Error('Unable to create new Pad'));
-      });
-
-  done(null, pad);
+  await agent.get(`/api/${apiVersion}/createPad?padID=${pad}`)
+      .set('Authorization', await common.generateJWTToken());
+  return pad;
 };
 
-const readOnlyId = function (padID, callback) {
-  api.get(`/api/${apiVersion}/getReadOnlyID?apikey=${apiKey}&padID=${padID}`)
-      .end((err, res) => {
-        if (err || (res.body.code !== 0)) callback(new Error('Unable to get read only id'));
-
-        callback(null, res.body.data.readOnlyID);
-      });
+const readOnlyId = async function (agent, padID) {
+  const res = await agent.get(`/api/${apiVersion}/getReadOnlyID?padID=${padID}`)
+      .set('Authorization', await common.generateJWTToken());
+  if (res.body.code !== 0) throw new Error('Unable to get read only id');
+  return res.body.data.readOnlyID;
 };
 
-/* ********** Available functions/values: ********** */
 exports.apiVersion = apiVersion;
-exports.api = api;
-exports.appUrl = appUrl;
-exports.apiKey = apiKey;
+exports.common = common;
 exports.createPad = createPad;
 exports.readOnlyId = readOnlyId;
