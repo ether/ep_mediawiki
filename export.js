@@ -1,6 +1,6 @@
 'use strict';
 
-const Changeset = require('ep_etherpad-lite/static/js/Changeset');
+const Changeset = require('ep_etherpad-lite/static/js/Changeset').default || require('ep_etherpad-lite/static/js/Changeset');
 
 const _analyzeLine = (alineAttrs, apool) => {
   let header = null;
