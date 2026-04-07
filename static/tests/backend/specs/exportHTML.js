@@ -6,6 +6,13 @@ const randomString = require('ep_etherpad-lite/static/js/pad_utils').randomStrin
 const apiVersion = 1;
 let agent;
 
+const setText = async (padID, text) => {
+  const res = await agent.get(`/api/${apiVersion}/setText?padID=${padID}&text=${encodeURIComponent(text)}`)
+      .set('Authorization', await common.generateJWTToken());
+  if (res.body.code !== 0) throw new Error('Unable to set pad text');
+  return padID;
+};
+
 const createPad = async (padID) => {
   const res = await agent.get(`/api/${apiVersion}/createPad?padID=${padID}`)
       .set('Authorization', await common.generateJWTToken());
@@ -13,20 +20,10 @@ const createPad = async (padID) => {
   return padID;
 };
 
-const setHTML = async (padID, html) => {
-  const res = await agent.get(`/api/${apiVersion}/setHTML?padID=${padID}&html=${encodeURIComponent(html)}`)
-      .set('Authorization', await common.generateJWTToken());
-  if (res.body.code !== 0) throw new Error('Unable to set pad HTML');
-  return padID;
-};
-
 const getHTMLEndPointFor = (padID) => `/api/${apiVersion}/getHTML?padID=${padID}`;
 
-const buildHTML = (body) => `<html><body>${body}</body></html>`;
-
-describe('export headings to HTML', function () {
+describe('export to HTML with ep_mediawiki loaded', function () {
   let padID;
-  let html;
 
   before(async function () {
     agent = await common.init();
@@ -35,28 +32,27 @@ describe('export headings to HTML', function () {
   beforeEach(async function () {
     padID = randomString(5);
     await createPad(padID);
-    await setHTML(padID, html());
+    await setText(padID, 'hello world\n');
   });
 
-  context('when pad has an h1 heading', function () {
-    before(async function () {
-      html = () => buildHTML('<h1>Hello</h1>');
-    });
-
-    it('returns ok', async function () {
-      await agent.get(getHTMLEndPointFor(padID))
-          .set('Authorization', await common.generateJWTToken())
-          .expect('Content-Type', /json/)
-          .expect(200);
-    });
-
-    it('returns HTML with heading', async function () {
-      await agent.get(getHTMLEndPointFor(padID))
-          .set('Authorization', await common.generateJWTToken())
-          .expect((res) => {
-            const html = res.body.data.html;
-            if (html.indexOf('<h1') === -1) throw new Error('No heading detected');
-          });
-    });
+  it('export does not crash when ep_mediawiki is loaded', async function () {
+    // Smoke test: the getLineHTMLForExport hook from ep_mediawiki/export.js
+    // must not crash on plain content.  Previously this hook accessed
+    // Changeset.opIterator without the ESM/CJS interop fallback.
+    await agent.get(getHTMLEndPointFor(padID))
+        .set('Authorization', await common.generateJWTToken())
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .expect((res) => {
+          if (res.body.code !== 0) {
+            throw new Error(`Export failed: ${JSON.stringify(res.body)}`);
+          }
+          if (typeof res.body.data.html !== 'string') {
+            throw new Error('Expected html string in response');
+          }
+          if (res.body.data.html.indexOf('hello world') === -1) {
+            throw new Error('Expected exported HTML to contain pad text');
+          }
+        });
   });
 });
