@@ -20,8 +20,9 @@ const getMediaWikiFromAtext = (pad, atext) => {
   const textLines = atext.text.slice(0, -1).split('\n');
   const attribLines = Changeset.splitAttributionLines(atext.attribs, atext.text);
 
-  const tags = ['==', '===', '\'\'\'', '\'\'', 'u>', 's>'];
-  const props = ['heading1', 'heading2', 'bold', 'italic', 'underline', 'strikethrough'];
+  const tags = ['==', '===', '\'\'\'', '\'\'', 'u>', 's>', 'sup>', 'sub>'];
+  const props = ['heading1', 'heading2', 'bold', 'italic', 'underline', 'strikethrough',
+    'superscript', 'subscript'];
   const anumMap = {};
 
   props.forEach((propName, i) => {
