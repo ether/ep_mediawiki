@@ -1,9 +1,29 @@
 'use strict';
 
+// Sub-path import keeps the client bundle clean. Importing the top-level
+// `ep_plugin_helpers` index pulls in every helper's getters; `settings` and
+// `toggle` reach server-only modules (eejs, Settings) which esbuild can't
+// resolve for the browser.
+const {padToggle} = require('ep_plugin_helpers/pad-toggle');
+
+// Same config as the server-side instance — must agree on pluginName,
+// settingId, l10nId, and defaultLabel for the checkbox ids and clientVars
+// lookup to line up.
+const mediawikiToggle = padToggle({
+  pluginName: 'ep_mediawiki',
+  settingId: 'mediawiki',
+  l10nId: 'ep_mediawiki.mediawiki',
+  defaultLabel: 'Show MediaWiki',
+  defaultEnabled: false,
+});
+
+// Re-export so the helper sees pad-wide broadcasts and refreshes our state
+// when another user toggles the pad-wide checkbox.
+exports.handleClientMessage_CLIENT_MESSAGE = mediawikiToggle.handleClientMessage_CLIENT_MESSAGE;
+
 exports.postAceInit = (hook, context) => {
   const mediawiki = {
     enable: () => {
-      // add css class mediawiki
       $('iframe[name="ace_outer"]').contents().find('iframe')
           .contents().find('#innerdocbody').addClass('mediawiki');
     },
@@ -13,28 +33,18 @@ exports.postAceInit = (hook, context) => {
     },
   };
 
-  /* init */
-  if ($('#options-mediawiki').is(':checked')) {
-    mediawiki.enable();
-  } else {
-    mediawiki.disable();
-  }
-  /* on click */
-  $('#options-mediawiki').on('click', () => {
-    if ($('#options-mediawiki').is(':checked')) {
-      mediawiki.enable();
-    } else {
-      mediawiki.disable();
-    }
+  mediawikiToggle.init({
+    onChange: (enabled) => { enabled ? mediawiki.enable() : mediawiki.disable(); },
   });
-  /* Param initiator */
-  // if the url param is set
-  const urlContainsMediawikiTrue = (getParam('mediawiki') === 'true');
-  if (urlContainsMediawikiTrue) {
-    $('#options-mediawiki').attr('checked', 'checked');
+
+  // ?mediawiki=true / ?mediawiki=false URL parameter still overrides the
+  // resolved setting, matching the pre-migration behavior.
+  const param = getParam('mediawiki');
+  if (param === 'true') {
+    $('#options-mediawiki').prop('checked', true);
     mediawiki.enable();
-  } else if (getParam('mediawiki') === 'false') {
-    $('#options-mediawiki').attr('checked', false);
+  } else if (param === 'false') {
+    $('#options-mediawiki').prop('checked', false);
     mediawiki.disable();
   }
 };
@@ -46,10 +56,9 @@ const getParam = (sname) => {
   let params = location.search.substr(location.search.indexOf('?') + 1);
   let sval = '';
   params = params.split('&');
-  // split param and value into individual pieces
   for (let i = 0; i < params.length; i++) {
     const temp = params[i].split('=');
-    if ([temp[0]] === sname) { sval = temp[1]; }
+    if (temp[0] === sname) { sval = temp[1]; }
   }
   return sval;
 };
