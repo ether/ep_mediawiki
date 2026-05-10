@@ -32,8 +32,8 @@ ep_mediawiki/
 
 ## Helpers used
 
-* `pad-toggle` from `ep_plugin_helpers`
-* `pad-toggle-server` from `ep_plugin_helpers`
+* `padToggle` (client sub-path) from `ep_plugin_helpers`
+* `padToggle` (server) from `ep_plugin_helpers`
 
 
 ## Helpers NOT used
