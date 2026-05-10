@@ -1,6 +1,7 @@
 'use strict';
 
-const eejs = require('ep_etherpad-lite/node/eejs');
+const {template} = require('ep_plugin_helpers');
+
 const {padToggle} = require('ep_plugin_helpers/pad-toggle-server');
 
 // Parallel User Settings + Pad Wide Settings checkboxes for the MediaWiki
@@ -18,12 +19,8 @@ exports.clientVars = mediawikiToggle.clientVars;
 exports.eejsBlock_mySettings = mediawikiToggle.eejsBlock_mySettings;
 exports.eejsBlock_padSettings = mediawikiToggle.eejsBlock_padSettings;
 
-exports.eejsBlock_exportColumn = (hookName, args, cb) => {
-  args.content += eejs.require('ep_mediawiki/templates/exportcolumn.html', {}, module);
-  cb();
-};
+exports.eejsBlock_exportColumn =
+    template('ep_mediawiki/templates/exportcolumn.html');
 
-exports.eejsBlock_scripts = (hookName, args, cb) => {
-  args.content += eejs.require('ep_mediawiki/templates/scripts.html', {}, module);
-  cb();
-};
+exports.eejsBlock_scripts =
+    template('ep_mediawiki/templates/scripts.html');
