@@ -9,6 +9,7 @@ const templatePath = path.resolve(
 
 describe(__filename, function () {
   let src;
+
   before(function () { src = fs.readFileSync(templatePath, 'utf8'); });
 
   it('export button uses an existing Etherpad buttonicon glyph (#16)', function () {
