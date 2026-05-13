@@ -31,10 +31,11 @@ exports.postAceInit = (hook, context) => {
 
   const getClientVars = () => {
     try {
-      return window.clientVars || (window.top && window.top.clientVars) || {};
+      return window.clientVars || (window.top && window.top.clientVars);
     } catch (_err) {
-      return window.clientVars || {};
+      // Cross-origin frames can block window.top access.
     }
+    return window.clientVars || {};
   };
   const loadToolbarConfig = () => {
     const config = getClientVars().ep_mediawiki || {};
@@ -65,7 +66,6 @@ exports.postAceInit = (hook, context) => {
       return;
     }
     const target = document.getElementById('editbar') || document.body;
-    if (!target) return;
     toolbarObserver = new MutationObserver(() => queueUnsupportedToolbarRefresh());
     toolbarObserver.observe(target, {childList: true, subtree: true});
   };
