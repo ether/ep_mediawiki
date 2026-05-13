@@ -14,8 +14,27 @@ const mediawikiToggle = padToggle({
   defaultEnabled: false,
 });
 
-exports.loadSettings = mediawikiToggle.loadSettings;
-exports.clientVars = mediawikiToggle.clientVars;
+let hideUnsupportedToolbarButtons = false;
+let unsupportedToolbarSelectors = [];
+
+exports.loadSettings = async (hookName, args) => {
+  await mediawikiToggle.loadSettings(hookName, args);
+  const settings = (args && args.settings) || {};
+  const mediawikiSettings = settings.ep_mediawiki || {};
+  hideUnsupportedToolbarButtons = mediawikiSettings.hideUnsupportedToolbarButtons === true;
+  unsupportedToolbarSelectors = Array.isArray(mediawikiSettings.unsupportedToolbarSelectors)
+    ? mediawikiSettings.unsupportedToolbarSelectors : [];
+};
+exports.clientVars = async (hookName, context) => {
+  const clientVars = await mediawikiToggle.clientVars(hookName, context);
+  return {
+    ...clientVars,
+    ep_mediawiki: {
+      hideUnsupportedToolbarButtons,
+      unsupportedToolbarSelectors,
+    },
+  };
+};
 exports.eejsBlock_mySettings = mediawikiToggle.eejsBlock_mySettings;
 exports.eejsBlock_padSettings = mediawikiToggle.eejsBlock_padSettings;
 

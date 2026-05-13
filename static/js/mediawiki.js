@@ -5,6 +5,7 @@
 // `toggle` reach server-only modules (eejs, Settings) which esbuild can't
 // resolve for the browser.
 const {padToggle} = require('ep_plugin_helpers/pad-toggle');
+const {setUnsupportedToolbarButtonsHidden} = require('./unsupportedToolbarButtons');
 
 // Same config as the server-side instance — must agree on pluginName,
 // settingId, l10nId, and defaultLabel for the checkbox ids and clientVars
@@ -22,16 +23,56 @@ const mediawikiToggle = padToggle({
 exports.handleClientMessage_CLIENT_MESSAGE = mediawikiToggle.handleClientMessage_CLIENT_MESSAGE;
 
 exports.postAceInit = (hook, context) => {
+  let hideUnsupportedToolbarButtons = false;
+  let unsupportedToolbarSelectors = [];
+  let mediawikiEnabled = false;
+  let toolbarObserver = null;
+
+  const getClientVars = () => window.clientVars || (window.top && window.top.clientVars) || {};
+  const loadToolbarConfig = () => {
+    const config = getClientVars().ep_mediawiki || {};
+    hideUnsupportedToolbarButtons = config.hideUnsupportedToolbarButtons === true;
+    unsupportedToolbarSelectors = Array.isArray(config.unsupportedToolbarSelectors)
+      ? config.unsupportedToolbarSelectors : [];
+  };
+  const refreshUnsupportedToolbarButtons = () => {
+    if (!hideUnsupportedToolbarButtons) return;
+    setUnsupportedToolbarButtonsHidden(document, {
+      additionalSelectors: unsupportedToolbarSelectors,
+    }, mediawikiEnabled);
+  };
+  const observeUnsupportedToolbarButtons = () => {
+    if (
+      !hideUnsupportedToolbarButtons ||
+      toolbarObserver ||
+      typeof MutationObserver !== 'function'
+    ) {
+      return;
+    }
+    const target = document.getElementById('editbar') || document.body;
+    if (!target) return;
+    toolbarObserver = new MutationObserver(() => refreshUnsupportedToolbarButtons());
+    toolbarObserver.observe(target, {childList: true, subtree: true});
+  };
+
+  loadToolbarConfig();
+
   const mediawiki = {
     enable: () => {
+      mediawikiEnabled = true;
       $('iframe[name="ace_outer"]').contents().find('iframe')
           .contents().find('#innerdocbody').addClass('mediawiki');
+      refreshUnsupportedToolbarButtons();
     },
     disable: () => {
+      mediawikiEnabled = false;
       $('iframe[name="ace_outer"]').contents().find('iframe')
           .contents().find('#innerdocbody').removeClass('mediawiki');
+      refreshUnsupportedToolbarButtons();
     },
   };
+
+  observeUnsupportedToolbarButtons();
 
   mediawikiToggle.init({
     onChange: (enabled) => { enabled ? mediawiki.enable() : mediawiki.disable(); },

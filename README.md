@@ -14,6 +14,27 @@ Paste the below into your settings.
 
 "ep_MediaWiki_default": true,
 
+Optional: hide unsupported toolbar buttons
+==========================================
+By default, ep_mediawiki leaves extra toolbar plugins alone so site admins can
+decide which controls they want to support. If you want MediaWiki mode to hide
+unsupported toolbar buttons, enable this in your Etherpad settings:
+
+```json
+{
+  "ep_mediawiki": {
+    "hideUnsupportedToolbarButtons": true,
+    "unsupportedToolbarSelectors": [
+      ".ep_checklists"
+    ]
+  }
+}
+```
+
+When `hideUnsupportedToolbarButtons` is enabled, ep_mediawiki automatically
+hides the alignment buttons from `ep_align` while MediaWiki mode is on. Add any
+extra selectors your checklist plugin uses to `unsupportedToolbarSelectors`.
+
 todo
 ====
 * Support all styles fully
