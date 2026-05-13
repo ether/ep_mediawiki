@@ -30,13 +30,13 @@ exports.postAceInit = (hook, context) => {
   let toolbarObserver = null;
 
   const loadToolbarConfig = () => {
-    let topClientVars;
+    let topWindowClientVars;
     try {
-      topClientVars = window.top && window.top.clientVars;
+      topWindowClientVars = window.top && window.top.clientVars;
     } catch (_err) {
       // Cross-origin frames can block window.top access.
     }
-    const config = (topClientVars || window.clientVars || {}).ep_mediawiki || {};
+    const config = (topWindowClientVars || window.clientVars || {}).ep_mediawiki || {};
     hideUnsupportedToolbarButtons = config.hideUnsupportedToolbarButtons === true;
     unsupportedToolbarSelectors = Array.isArray(config.unsupportedToolbarSelectors)
       ? config.unsupportedToolbarSelectors : [];

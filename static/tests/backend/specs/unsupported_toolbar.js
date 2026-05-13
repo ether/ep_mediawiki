@@ -35,9 +35,9 @@ describe('unsupportedToolbarButtons', function () {
   });
 
   it('hides the closest toolbar list item for matched controls', async function () {
-    const alignItem = {hidden: false};
+    const alignItem = {hidden: false, closest: () => null};
     const listItem = {hidden: false};
-    const otherItem = {hidden: false};
+    const otherItem = {hidden: false, closest: () => null};
     const doc = {
       querySelectorAll: (selector) => {
         if (selector === '[data-key="alignLeft"]') return [alignItem];
