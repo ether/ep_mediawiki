@@ -35,10 +35,12 @@ describe('unsupportedToolbarButtons', function () {
   });
 
   it('hides the closest toolbar list item for matched controls', async function () {
+    const alignItem = {hidden: false};
     const listItem = {hidden: false};
     const otherItem = {hidden: false};
     const doc = {
       querySelectorAll: (selector) => {
+        if (selector === '[data-key="alignLeft"]') return [alignItem];
         if (selector === '.ep_checklists') {
           return [{
             hidden: false,
@@ -54,11 +56,13 @@ describe('unsupportedToolbarButtons', function () {
 
     setUnsupportedToolbarButtonsHidden(
         doc, {additionalSelectors: ['.ep_checklists', '.ep_boxes']}, true);
+    assert.equal(alignItem.hidden, true);
     assert.equal(listItem.hidden, true);
     assert.equal(otherItem.hidden, true);
 
     setUnsupportedToolbarButtonsHidden(
         doc, {additionalSelectors: ['.ep_checklists', '.ep_boxes']}, false);
+    assert.equal(alignItem.hidden, false);
     assert.equal(listItem.hidden, false);
     assert.equal(otherItem.hidden, false);
   });

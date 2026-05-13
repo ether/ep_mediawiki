@@ -29,17 +29,14 @@ exports.postAceInit = (hook, context) => {
   let refreshQueued = false;
   let toolbarObserver = null;
 
-  const getClientVars = () => {
+  const loadToolbarConfig = () => {
     let topClientVars;
     try {
       topClientVars = window.top && window.top.clientVars;
     } catch (_err) {
       // Cross-origin frames can block window.top access.
     }
-    return topClientVars || window.clientVars || {};
-  };
-  const loadToolbarConfig = () => {
-    const config = getClientVars().ep_mediawiki || {};
+    const config = (topClientVars || window.clientVars || {}).ep_mediawiki || {};
     hideUnsupportedToolbarButtons = config.hideUnsupportedToolbarButtons === true;
     unsupportedToolbarSelectors = Array.isArray(config.unsupportedToolbarSelectors)
       ? config.unsupportedToolbarSelectors : [];
@@ -53,10 +50,11 @@ exports.postAceInit = (hook, context) => {
   const queueUnsupportedToolbarRefresh = () => {
     if (refreshQueued) return;
     refreshQueued = true;
-    window.setTimeout(() => {
+    const defer = window.requestAnimationFrame || ((fn) => window.setTimeout(fn, 0));
+    defer(() => {
       refreshQueued = false;
       refreshUnsupportedToolbarButtons();
-    }, 0);
+    });
   };
   const observeUnsupportedToolbarButtons = () => {
     if (
