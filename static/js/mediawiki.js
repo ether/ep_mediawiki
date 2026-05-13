@@ -26,9 +26,16 @@ exports.postAceInit = (hook, context) => {
   let hideUnsupportedToolbarButtons = false;
   let unsupportedToolbarSelectors = [];
   let mediawikiEnabled = false;
+  let refreshQueued = false;
   let toolbarObserver = null;
 
-  const getClientVars = () => window.clientVars || (window.top && window.top.clientVars) || {};
+  const getClientVars = () => {
+    try {
+      return window.clientVars || (window.top && window.top.clientVars) || {};
+    } catch (_err) {
+      return window.clientVars || {};
+    }
+  };
   const loadToolbarConfig = () => {
     const config = getClientVars().ep_mediawiki || {};
     hideUnsupportedToolbarButtons = config.hideUnsupportedToolbarButtons === true;
@@ -41,6 +48,14 @@ exports.postAceInit = (hook, context) => {
       additionalSelectors: unsupportedToolbarSelectors,
     }, mediawikiEnabled);
   };
+  const queueUnsupportedToolbarRefresh = () => {
+    if (refreshQueued) return;
+    refreshQueued = true;
+    window.setTimeout(() => {
+      refreshQueued = false;
+      refreshUnsupportedToolbarButtons();
+    }, 0);
+  };
   const observeUnsupportedToolbarButtons = () => {
     if (
       !hideUnsupportedToolbarButtons ||
@@ -51,7 +66,7 @@ exports.postAceInit = (hook, context) => {
     }
     const target = document.getElementById('editbar') || document.body;
     if (!target) return;
-    toolbarObserver = new MutationObserver(() => refreshUnsupportedToolbarButtons());
+    toolbarObserver = new MutationObserver(() => queueUnsupportedToolbarRefresh());
     toolbarObserver.observe(target, {childList: true, subtree: true});
   };
 

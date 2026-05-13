@@ -8,7 +8,7 @@ const {
   setUnsupportedToolbarButtonsHidden,
 } = require('../../../js/unsupportedToolbarButtons');
 
-describe(__filename, function () {
+describe('unsupportedToolbarButtons', function () {
   it('includes ep_align toolbar buttons by default', async function () {
     assert.deepEqual(DEFAULT_UNSUPPORTED_TOOLBAR_SELECTORS, [
       '[data-key="alignLeft"]',
