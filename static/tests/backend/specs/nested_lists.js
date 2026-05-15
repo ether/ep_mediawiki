@@ -35,7 +35,7 @@ describe('nested list MediaWiki export', function () {
     await setHTML(padID, '<ul><li>1<ul><li>2</li></ul></li></ul>');
 
     const res = await agent.get(getMediaWikiEndPointFor(padID))
-        .expect('Content-Type', /text\/plain/)
+        .expect('Content-Type', /plain\/text/)
         .expect(200);
 
     assert.match(res.text, /\* 1\n\*\* 2\n/);
