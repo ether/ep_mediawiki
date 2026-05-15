@@ -94,4 +94,11 @@ describe(__filename, function () {
         assert(src.includes('new Array(tags.length).fill(false)'),
             'propVals must be initialised with new Array(tags.length).fill(false)');
       });
+
+  it('does not rely on removed Changeset.stringIterator helper (#compat)', async function () {
+    assert(!src.includes('Changeset.stringIterator('),
+        'exportMediaWiki.js must not call removed Changeset.stringIterator()');
+    assert(src.includes('const takeText = (chars) => {'),
+        'exportMediaWiki.js should use a local text slicer for span extraction');
+  });
 });

@@ -44,8 +44,13 @@ const getMediaWikiFromAtext = (pad, atext) => {
     // <b>Just bold<b> <b><i>Bold and italics</i></b> <i>Just italics</i>
     // becomes
     // <b>Just bold <i>Bold and italics</i></b> <i>Just italics</i>
-    const taker = Changeset.stringIterator(text);
+    let textCursor = 0;
     const assem = Changeset.stringAssembler();
+    const takeText = (chars) => {
+      const chunk = text.slice(textCursor, textCursor + chars);
+      textCursor += chars;
+      return chunk;
+    };
 
     const emitOpenTag = (i) => {
       if (tags[i].indexOf('>') !== -1) {
@@ -149,7 +154,7 @@ const getMediaWikiFromAtext = (pad, atext) => {
         if (o.lines) {
           chars--; // exclude newline at end of line, if present
         }
-        const s = taker.take(chars);
+        const s = takeText(chars);
 
         assem.append(s);
       } // end iteration over spans in line
@@ -177,7 +182,7 @@ const getMediaWikiFromAtext = (pad, atext) => {
         // needs no escaping
         const iter = Changeset.opIterator(Changeset.subattribution(attribs, idx, idx + urlLength));
         idx += urlLength;
-        assem.append(taker.take(iter.next().chars));
+        assem.append(takeText(iter.next().chars));
 
         assem.append(']');
       });
