@@ -45,11 +45,15 @@ const getMediaWikiFromAtext = (pad, atext) => {
     // becomes
     // <b>Just bold <i>Bold and italics</i></b> <i>Just italics</i>
     let textCursor = 0;
-    const assem = Changeset.stringAssembler();
+    const chunks = [];
     const takeText = (chars) => {
       const chunk = text.slice(textCursor, textCursor + chars);
       textCursor += chars;
       return chunk;
+    };
+    const assem = {
+      append: (chunk) => { chunks.push(chunk); },
+      toString: () => chunks.join(''),
     };
 
     const emitOpenTag = (i) => {
