@@ -20,9 +20,9 @@ const getMediaWikiFromAtext = (pad, atext) => {
   const textLines = atext.text.slice(0, -1).split('\n');
   const attribLines = Changeset.splitAttributionLines(atext.attribs, atext.text);
 
-  const tags = ['==', '===', '\'\'\'', '\'\'', 'u>', 's>', 'sup>', 'sub>'];
-  const props = ['heading1', 'heading2', 'bold', 'italic', 'underline', 'strikethrough',
-    'superscript', 'subscript'];
+  // Inline character-level formatting tags (headings are line-level, handled separately)
+  const tags = ['\'\'\'', '\'\'', 'u>', 's>', 'sup>', 'sub>'];
+  const props = ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript'];
   const anumMap = {};
 
   props.forEach((propName, i) => {
@@ -33,7 +33,8 @@ const getMediaWikiFromAtext = (pad, atext) => {
   });
 
   const getLineMediaWiki = (text, attribs) => {
-    const propVals = [false, false, false];
+    const propVals = new Array(tags.length).fill(false);
+    let currentColor = null;
     const ENTER = 1;
     const STAY = 2;
     const LEAVE = 0;
@@ -43,8 +44,17 @@ const getMediaWikiFromAtext = (pad, atext) => {
     // <b>Just bold<b> <b><i>Bold and italics</i></b> <i>Just italics</i>
     // becomes
     // <b>Just bold <i>Bold and italics</i></b> <i>Just italics</i>
-    const taker = Changeset.stringIterator(text);
-    const assem = Changeset.stringAssembler();
+    let textCursor = 0;
+    const chunks = [];
+    const takeText = (chars) => {
+      const chunk = text.slice(textCursor, textCursor + chars);
+      textCursor += chars;
+      return chunk;
+    };
+    const assem = {
+      append: (chunk) => { chunks.push(chunk); },
+      toString: () => chunks.join(''),
+    };
 
     const emitOpenTag = (i) => {
       if (tags[i].indexOf('>') !== -1) {
@@ -96,44 +106,66 @@ const getMediaWikiFromAtext = (pad, atext) => {
         }
         // now each member of propVal is in {false,LEAVE,ENTER,true}
         // according to what happens at start of span
-        if (propChanged) {
-          // leaving bold (e.g.) also leaves italics, etc.
-          let left = false;
-          for (let i = 0; i < propVals.length; i++) {
-            const v = propVals[i];
-            if (!left) {
-              if (v === LEAVE) {
-                left = true;
+
+        const newColor = Changeset.opAttributeValue(o, 'color', apool) || null;
+        const colorChanged = newColor !== currentColor;
+
+        if (propChanged || colorChanged) {
+          // Close color span before adjusting inline tags (color is innermost)
+          if (colorChanged && currentColor) {
+            assem.append('</span>');
+          }
+
+          if (propChanged) {
+            // leaving bold (e.g.) also leaves italics, etc.
+            let left = false;
+            for (let i = 0; i < propVals.length; i++) {
+              const v = propVals[i];
+              if (!left) {
+                if (v === LEAVE) {
+                  left = true;
+                }
+              } else if (v === true) {
+                propVals[i] = STAY; // tag will be closed and re-opened
               }
-            } else if (v === true) {
-              propVals[i] = STAY; // tag will be closed and re-opened
+            }
+
+            for (let i = propVals.length - 1; i >= 0; i--) {
+              if (propVals[i] === LEAVE) {
+                emitCloseTag(i);
+                propVals[i] = false;
+              } else if (propVals[i] === STAY) {
+                emitCloseTag(i);
+              }
+            }
+            for (let i = 0; i < propVals.length; i++) {
+              if (propVals[i] === ENTER || propVals[i] === STAY) {
+                emitOpenTag(i);
+                propVals[i] = true;
+              }
             }
           }
 
-          for (let i = propVals.length - 1; i >= 0; i--) {
-            if (propVals[i] === LEAVE) {
-              emitCloseTag(i);
-              propVals[i] = false;
-            } else if (propVals[i] === STAY) {
-              emitCloseTag(i);
+          // Open new color span after inline tags (color is innermost)
+          if (colorChanged) {
+            currentColor = newColor;
+            if (newColor) {
+              assem.append(`<span style="color:${newColor};">`);
             }
           }
-          for (let i = 0; i < propVals.length; i++) {
-            if (propVals[i] === ENTER || propVals[i] === STAY) {
-              emitOpenTag(i);
-              propVals[i] = true;
-            }
-          }
-          // propVals is now all {true,false} again
-        } // end if (propChanged)
+        } // end if (propChanged || colorChanged)
         let chars = o.chars;
         if (o.lines) {
           chars--; // exclude newline at end of line, if present
         }
-        const s = taker.take(chars);
+        const s = takeText(chars);
 
         assem.append(s);
       } // end iteration over spans in line
+      if (currentColor) {
+        assem.append('</span>');
+        currentColor = null;
+      }
       for (let i = propVals.length - 1; i >= 0; i--) {
         if (propVals[i]) {
           emitCloseTag(i);
@@ -154,7 +186,7 @@ const getMediaWikiFromAtext = (pad, atext) => {
         // needs no escaping
         const iter = Changeset.opIterator(Changeset.subattribution(attribs, idx, idx + urlLength));
         idx += urlLength;
-        assem.append(taker.take(iter.next().chars));
+        assem.append(takeText(iter.next().chars));
 
         assem.append(']');
       });
@@ -169,15 +201,28 @@ const getMediaWikiFromAtext = (pad, atext) => {
   for (let i = 0; i < textLines.length; i++) {
     const line = _analyzeLine(textLines[i], attribLines[i], apool);
     const lineContent = getLineMediaWiki(line.text, line.aline);
+    // lineContent ends with \n; strip it for wrapping then re-add
+    const contentText = lineContent.slice(0, -1);
 
-    if (line.listLevel && lineContent) {
-      if (line.listTypeName === 'number') {
-        pieces.push(`${new Array(line.listLevel + 1).join('')}# `);
+    if (line.headingType) {
+      if (line.headingType === 'code') {
+        pieces.push(`<code>${contentText}</code>\n`);
       } else {
-        pieces.push(`${new Array(line.listLevel + 1).join('')}* `);
+        const level = parseInt(line.headingType[1], 10);
+        const markers = '='.repeat(level);
+        pieces.push(`${markers} ${contentText} ${markers}\n`);
       }
+    } else if (line.listLevel && lineContent) {
+      if (line.listTypeName === 'number') {
+        pieces.push(`${'#'.repeat(line.listLevel)} ${contentText}\n`);
+      } else if (line.listTypeName === 'indent') {
+        pieces.push(`${':'.repeat(line.listLevel)} ${contentText}\n`);
+      } else {
+        pieces.push(`${'*'.repeat(line.listLevel)} ${contentText}\n`);
+      }
+    } else {
+      pieces.push(lineContent);
     }
-    pieces.push(lineContent);
   }
 
   return pieces.join('');
@@ -186,13 +231,14 @@ const getMediaWikiFromAtext = (pad, atext) => {
 const _analyzeLine = (text, aline, apool) => {
   const line = {};
 
-  // identify list
+  // identify list and heading line attributes
   let lineMarker = 0;
   line.listLevel = 0;
   if (aline) {
     const opIter = Changeset.opIterator(aline);
     if (opIter.hasNext()) {
-      let listType = Changeset.opAttributeValue(opIter.next(), 'list', apool);
+      const op = opIter.next();
+      let listType = Changeset.opAttributeValue(op, 'list', apool);
       if (listType) {
         lineMarker = 1;
         listType = /([a-z]+)([12345678])/.exec(listType);
@@ -200,6 +246,11 @@ const _analyzeLine = (text, aline, apool) => {
           line.listTypeName = listType[1];
           line.listLevel = Number(listType[2]);
         }
+      }
+      const heading = Changeset.opAttributeValue(op, 'heading', apool);
+      if (heading) {
+        lineMarker = 1;
+        line.headingType = heading; // e.g. 'h1', 'h2', ..., 'h6', 'code'
       }
     }
   }

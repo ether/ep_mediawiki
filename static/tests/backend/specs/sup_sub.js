@@ -9,6 +9,7 @@ const exporterPath = path.resolve(
 
 describe(__filename, function () {
   let src;
+
   before(function () { src = fs.readFileSync(exporterPath, 'utf8'); });
 
   it('MediaWiki exporter maps superscript/subscript attributes to <sup>/<sub> (#14)',
