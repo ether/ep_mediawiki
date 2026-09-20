@@ -10,9 +10,9 @@ const templatePath = path.resolve(
 describe(__filename, function () {
   let src;
 
-  before(function () { src = fs.readFileSync(templatePath, 'utf8'); });
+  before(async function () { src = fs.readFileSync(templatePath, 'utf8'); });
 
-  it('export button uses an existing Etherpad buttonicon glyph (#16)', function () {
+  it('export button uses an existing Etherpad buttonicon glyph (#16)', async function () {
     // Etherpad's icon font was updated years ago and no longer ships the
     // wikipedia glyph at \\e805 that this template used to target. Switch
     // to one of the core `buttonicon-file-*` classes so the icon actually
@@ -21,7 +21,7 @@ describe(__filename, function () {
         `expected a buttonicon-file* class on the export icon; template:\n${src}`);
   });
 
-  it('does not reference the removed custom \\e805 glyph (#16)', function () {
+  it('does not reference the removed custom \\e805 glyph (#16)', async function () {
     assert(!/\\e805/.test(src),
         'template must not hard-code the old \\e805 wikipedia codepoint, which Etherpad\'s ' +
         'icon font does not ship anymore');

@@ -10,10 +10,10 @@ const exporterPath = path.resolve(
 describe(__filename, function () {
   let src;
 
-  before(function () { src = fs.readFileSync(exporterPath, 'utf8'); });
+  before(async function () { src = fs.readFileSync(exporterPath, 'utf8'); });
 
   it('MediaWiki exporter maps superscript/subscript attributes to <sup>/<sub> (#14)',
-      function () {
+      async function () {
         // Ensure the props array includes superscript/subscript and the
         // tags array has the corresponding `sup>` / `sub>` markers. The
         // `>`-suffixed tags are emitted wrapped in `<`/`</` by the
