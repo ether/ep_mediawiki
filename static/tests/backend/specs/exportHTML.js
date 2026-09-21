@@ -7,7 +7,8 @@ const apiVersion = 1;
 let agent;
 
 const setText = async (padID, text) => {
-  const res = await agent.get(`/api/${apiVersion}/setText?padID=${padID}&text=${encodeURIComponent(text)}`)
+  const res = await agent
+      .get(`/api/${apiVersion}/setText?padID=${padID}&text=${encodeURIComponent(text)}`)
       .set('Authorization', await common.generateJWTToken());
   if (res.body.code !== 0) throw new Error('Unable to set pad text');
   return padID;
